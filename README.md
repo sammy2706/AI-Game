@@ -1,5 +1,4 @@
-"""
-Epic Quest: A Text-Based Adventure RPG
+# Epic Quest: A Text-Based Adventure RPG
 
 ### Game Concept
 Epic Quest is a text-based adventure RPG where players embark on a journey through a mystical world. 
@@ -52,4 +51,3 @@ This game only requires Python's standard library. Make sure you have Python 3.6
 The code is thoroughly commented to explain the logic behind each function and game mechanic. Key sections such as character creation, combat, and inventory management include comments to clarify the purpose and functionality of each part.
 
 ### Enjoy your Epic Quest!
-"""

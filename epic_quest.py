@@ -115,6 +115,7 @@ class Game:
         self.player = None
         self.current_location = "start"
         self.game_over = False
+        self.in_battle = False
         self.dragon_befriended = False  # New flag for befriending the dragon
         self.locations = self.init_locations()
 
@@ -188,8 +189,10 @@ class Game:
         while not self.game_over:
             if self.dragon_befriended:  # Skip the loop if the dragon is befriended
                 break
-            self.show_location()
-            self.handle_location()
+            
+            if not self.in_battle:
+                self.show_location()
+                self.handle_location()
             
             # After each action, check if the player has been defeated
             if self.player.stats["health"] <= 0:
@@ -199,6 +202,10 @@ class Game:
 
     def show_location(self):
         """Show the player's current location and available paths."""
+
+        if self.in_battle:
+            return
+
         location = self.locations[self.current_location]
         print(f"\n=== {location['name']} ===")
         print(location["description"])
@@ -239,6 +246,7 @@ class Game:
 
     def handle_encounter(self):
         """Random encounter with an enemy."""
+        self.in_battle = True
         difficulties = ["Easy", "Medium", "Hard"]
         enemy_types = ["Goblin", "Troll", "Dark Knight", "Evil Mage", "Shadow Beast"]
         
@@ -285,6 +293,8 @@ class Game:
                 print("\nYou have been defeated!")
                 self.end_game("defeat")
                 break
+
+            self.in_battle = False
 
     def after_battle(self):
         """Allow the player to rest and recover health after battle."""
@@ -383,10 +393,24 @@ class Game:
                 choice = int(input("Enter your choice: "))
                 if 1 <= choice <= len(options):
                     next_location = options[choice-1]
-                    if next_location == "befriend_dragon":
-                        self.befriend_dragon()  # Trigger the befriend action
-                        return  # Exit method after befriending to avoid loops
-                    self.current_location = next_location
+                    if next_location == "dragon_cave":
+                        print("\nYou've entered the Dragon's Cave! Do you want to:")
+                        print("1. Befriend the dragon")
+                        print("2. Fight the dragon")
+
+                        while True:
+                            action = input("Enter your choice (1 for Befriend, 2 for Fight the Dragon):")
+                            if action == "1":
+                                self.befriend_dragon()  # Trigger the befriend action
+                                return  # Exit method after befriending to avoid loops
+                            elif action == "2":
+                                self.fight_dragon()
+                                return
+                            else:
+                                print("Inavild choice. Please try again.")
+                    
+                    else:
+                        self.current_location = next_location
                     break
                 print("Invalid choice. Please try again.")
             except ValueError:
@@ -399,6 +423,53 @@ class Game:
         self.player.stats["magic"] += 10
         self.dragon_befriended = True  # Set the flag to True
         self.end_game("victory_befriend")  # End the game immediately after befriending
+
+    def fight_dragon(self):
+        dragon = Enemy("Ancient Dragon", "Hard")
+        print("\nThe dragon lets out a roar and prepares to fight!")
+
+        while dragon.stats["health"] > 0 and self.player.stats["health"] > 0:
+            print(f"\n{self.player.name} HP: {self.player.stats['health']}")
+            print(f"{dragon.name} HP: {dragon.stats['health']}")
+
+            # Show player abilities
+            print("\nYour abilities:")
+            for i, ability in enumerate(self.player.abilities, 1):
+                print(f"{i}. {ability}")
+
+        # Player's turn
+        while True:
+            try:
+                choice = int(input("Choose your ability (number): "))
+                if 1 <= choice <= len(self.player.abilities):
+                    break
+                print("Invalid choice. Please try again.")
+            except ValueError:
+                print("Please enter a number.")
+
+        # Player attacks dragon
+        message, damage = self.player.use_ability(self.player.abilities[choice - 1], dragon)
+        print(message)
+        dragon.stats["health"] -= damage
+        print(f"Dealt {damage} damage!")
+
+        # Check if dragon is defeated
+        if dragon.stats["health"] <= 0:
+            print(f"\nYou defeated the {dragon.name}! The realm celebrates your victory!")
+            self.end_game("victory")
+            return
+
+        # Dragon's turn
+        message, damage = dragon.use_ability()
+        print(message)
+        self.player.stats["health"] -= damage
+        print(f"Took {damage} damage!")
+
+        # Check if player is defeated
+        if self.player.stats["health"] <= 0:
+            print("\nYou have been defeated by the dragon!")
+            self.end_game("defeat")
+            return
 
 
 
